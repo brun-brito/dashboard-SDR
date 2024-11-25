@@ -28,8 +28,12 @@ const ProductTable: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Product; direction: 'asc' | 'desc' } | null>(null);
 
   const fetchProducts = async () => {
+    setIsLoading(true);
     const querySnapshot = await getDocs(collection(db, "produtos"));
     const productList: Product[] = querySnapshot.docs.map((doc) => {
       const data = doc.data() as Product;
@@ -42,23 +46,68 @@ const ProductTable: React.FC = () => {
     productList.sort((a, b) => a.nome.localeCompare(b.nome));
     setProducts(productList);
     setFilteredProducts(productList);
+    setIsLoading(false);
   };
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  const sortProducts = (key: keyof Product) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  
+    const sortedProducts = [...filteredProducts].sort((a, b) => {
+      const aValue = key === 'preco' ? parseFloat(a[key] as unknown as string) : a[key];
+      const bValue = key === 'preco' ? parseFloat(b[key] as unknown as string) : b[key];
+  
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return direction === 'asc' ? aValue - bValue : bValue - aValue; // Ordenação numérica
+      }
+  
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return direction === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue); // Ordenação alfabética
+      }
+  
+      return 0; // Caso os valores sejam incompatíveis, mantém a posição original
+    });
+  
+    setFilteredProducts(sortedProducts);
+  };     
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
-    setFilteredProducts(
-      products.filter(
-        (product) =>
-          product.nome.toLowerCase().includes(query) ||
-          product.marca.toLowerCase().includes(query) ||
-          product.categoria.toLowerCase().includes(query)
-      )
+
+    const filtered = products.filter(
+      (product) =>
+        product.nome.toLowerCase().includes(query) ||
+        product.marca.toLowerCase().includes(query) ||
+        product.categoria.toLowerCase().includes(query)
     );
+    setFilteredProducts(filtered);
+    setCurrentPage(1);
+  };
+
+  const paginateProducts = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredProducts.slice(startIndex, endIndex);
+  };
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
   };
 
   const selectAllProducts = () => {
@@ -78,6 +127,9 @@ const ProductTable: React.FC = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    const userConfirmed = window.confirm("Tem certeza de que deseja excluir este produto? Essa ação é irreversível");
+    if (!userConfirmed) return;
+
     await deleteDoc(doc(db, "produtos", id));
     fetchProducts();
   };
@@ -206,7 +258,7 @@ const ProductTable: React.FC = () => {
                 onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
                 className="border border-gray-300 rounded p-2 w-full"
               />
-              <div className="flex gap-2">
+              <div className="button-edit-group flex gap-2">
                 <button
                   onClick={addProduct}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
@@ -239,11 +291,13 @@ const ProductTable: React.FC = () => {
             Nenhum produto encontrado.
           </div>
         ) : (
-        <table className="table-auto w-full border border-gray-300 text-center">
+        <div className="table-container">
+        <table className="table-produtos table-auto w-full border border-gray-300 text-center">
           <thead className="bg-gray-200">
             <tr>
               <th className="px-4 py-2 border border-gray-300 flex items-center justify-center">
                 {/* Checkbox para selecionar todos */}
+                Sel. todos<br></br>
                 <input
                   type="checkbox"
                   checked={
@@ -264,33 +318,74 @@ const ProductTable: React.FC = () => {
                         onClick={deleteSelectedProducts}
                         disabled={isLoading} // Evita múltiplos cliques durante o carregamento
                         className={`icon-button ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
-                      >
+                      >{`(${selectedProducts.length})`}
                         <TrashIcon className="trash-icon" />
                       </button>
                     )}
                   </div>
                 )}
               </th>
-              <th className="px-4 py-2 border border-gray-300">Nome</th>
-              <th className="px-4 py-2 border border-gray-300">Preço</th>
-              <th className="px-4 py-2 border border-gray-300">Quantidade</th>
-              <th className="px-4 py-2 border border-gray-300">Marca</th>
-              <th className="px-4 py-2 border border-gray-300">Categoria</th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("nome")}
+              >
+                Nome{" "}
+                {sortConfig?.key === "nome" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("preco")}
+              >
+                Preço{" "}
+                {sortConfig?.key === "preco" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("quantidade")}
+              >
+                Quantidade{" "}
+                {sortConfig?.key === "quantidade" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("marca")}
+              >
+                Marca{" "}
+                {sortConfig?.key === "marca" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("categoria")}
+              >
+                Categoria{" "}
+                {sortConfig?.key === "categoria" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
               <th className="px-4 py-2 border border-gray-300">Ações</th>
             </tr>
           </thead>
           <tbody>
-            {filteredProducts.map((product, index) => (
-              <tr
-                key={product.id}
-                className={`${
-                  selectedProducts.includes(product.id)
-                    ? "bg-yellow-100"
-                    : index % 2 === 0
-                    ? "bg-gray-50"
-                    : "bg-white"
-                } hover:bg-gray-200`}
-              >
+            {paginateProducts().map((product) => (
+                <tr key={product.id} className="hover:bg-gray-200">
                 <td className="px-4 py-2 border border-gray-300">
                   <input
                     type="checkbox"
@@ -359,20 +454,22 @@ const ProductTable: React.FC = () => {
                       />
                     </td>
                     <td className="px-4 py-2 border border-gray-300">
-                      <button
-                        onClick={() =>
-                          updateProduct(product.id, editingProduct as Product)
-                        }
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 mr-2"
-                      >
-                        Salvar
-                      </button>
-                      <button
-                        onClick={() => setEditingProduct(null)}
-                        className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                      >
-                        Cancelar
-                      </button>
+                      <div className="button-group">
+                        <button
+                          onClick={() =>
+                            updateProduct(product.id, editingProduct as Product)
+                          }
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 mr-2"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          onClick={() => setEditingProduct(null)}
+                          className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </td>
                   </>
                 ) : (
@@ -383,9 +480,10 @@ const ProductTable: React.FC = () => {
                     <td className="px-4 py-2 border border-gray-300">{product.marca}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.categoria}</td>
                     <td className="px-4 py-2 border border-gray-300">
+                    <div className="button-group">
                       <button
                         onClick={() => setEditingProduct(product)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 mr-2"
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                       >
                         Editar
                       </button>
@@ -395,13 +493,35 @@ const ProductTable: React.FC = () => {
                       >
                         Excluir
                       </button>
+                    </div>
                     </td>
                   </>
                 )}
               </tr>
             ))}
           </tbody>
-        </table>)}
+        </table>
+        </div>)}
+        
+        <div className="pagination">
+          <button
+            onClick={goToPreviousPage}
+            disabled={currentPage === 1}
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          >
+           ◀ Anterior
+          </button>
+          <span className="text-gray-500">
+            Página {currentPage} de {totalPages}
+          </span>
+          <button
+            onClick={goToNextPage}
+            disabled={currentPage === totalPages}
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          >
+            Próxima ▶
+          </button>
+        </div>
       </div>
     </div>
   );

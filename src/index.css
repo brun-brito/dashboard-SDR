@@ -1,9 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --primary-color: #4f46e5;
   --primary-hover: #4338ca;
   --danger-color: #dc2626;
   --danger-hover: #b91c1c;
-  --background-color: #f3f4f6;
+  --background-color: #000;
   --card-background: #ffffff;
   --border-color: #d1d5db;
   --text-dark: #1f2937;
@@ -121,8 +125,12 @@ button.bg-gray-500:hover {
   background-color: #4b5563;
 }
 
-table {
+.table-container {
+  overflow-x: auto;
   width: 100%;
+}
+
+.table-produtos {
   border-collapse: collapse;
   margin-top: 1.5rem;
   box-shadow: 0 1px 2px var(--shadow-color);
@@ -141,14 +149,35 @@ th, td {
 th {
   font-weight: 600;
   color: var(--text-dark);
+  justify-items: center;
 }
 
-tr:nth-child(even) {
-  background-color: #f9fafb;
+th:first-child, td:first-child {
+  width: 5%; /* Checkbox */
 }
 
-tr:hover {
-  background-color: rgba(79, 70, 229, 0.1);
+th:nth-child(2), td:nth-child(2) {
+  width: 20%; /* Nome */
+}
+
+th:nth-child(3), td:nth-child(3) {
+  width: 15%; /* Preço */
+}
+
+th:nth-child(4), td:nth-child(4) {
+  width: 15%; /* Quantidade */
+}
+
+th:nth-child(5), td:nth-child(5) {
+  width: 15%; /* Marca */
+}
+
+th:nth-child(6), td:nth-child(6) {
+  width: 15%; /* Categoria */
+}
+
+th:last-child, td:last-child {
+  width: 15%; /* Ações */
 }
 
 .card {
@@ -179,6 +208,15 @@ tr:hover {
 @media (max-width: 768px) {
   .container {
     width: 95%;
+  }
+
+  .search-input {
+    width: 90% !important;
+  }
+
+  table {
+    width: 50vh;
+    display: grid;
   }
 
   table th, table td {
@@ -219,7 +257,7 @@ tr:hover {
 }
 
 .search-input {
-  width: 100%;
+  width: 95%;
   padding: 0.5rem 2.5rem 0.5rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -307,12 +345,66 @@ tr:hover {
   transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.back-arrow:hover {
-  transform: translateY(-2px);
+.info-icon, .back-arrow {
+  background-color: transparent;
 }
 
-.back-arrow svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  fill: currentColor;
+.info-icon {
+  display: flex; /* Torna o contêiner flexível */
+  align-items: center; /* Alinha o texto e o ícone verticalmente */
+  justify-content: center; /* Centraliza horizontalmente */
+  gap: 0.5rem; /* Adiciona espaçamento entre o texto e o ícone */
+  color: #4238b6; /* Define a cor do texto e do ícone */
+  padding: 0.5rem 1rem; /* Ajusta o preenchimento interno do botão */
+  border: none; /* Remove a borda padrão */
+  border-radius: 0.375rem; /* Arredonda os cantos */
+  cursor: pointer; /* Adiciona o cursor de ponteiro */
+  font-size: 1rem; /* Define o tamanho do texto */
+  transition: transform 0.2s ease; /* Adiciona uma transição suave */
+}
+
+.info-icon:hover {
+  transform: scale(1.05); /* Cria um leve efeito de zoom ao passar o mouse */
+}
+
+.info-icon svg {
+  width: 1.8rem; /* Largura do ícone */
+  height: 1.8rem; /* Altura do ícone */
+  fill: currentColor; /* Faz o ícone herdar a cor do texto */
+}
+
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid transparent;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.button-edit-group {
+  gap: 0.3rem;
+  margin-top: 10px;
+  display: flex;
 }

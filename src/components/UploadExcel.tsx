@@ -17,6 +17,7 @@ const UploadExcel: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [finalMessage, setFinalMessage] = useState<string | null>(null); // Novo estado para a mensagem final
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -82,6 +83,7 @@ const UploadExcel: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
     let successCount = 0;
     let errorCount = 0;
 
@@ -133,7 +135,9 @@ const UploadExcel: React.FC = () => {
     } else {
       setFinalMessage("Sucesso: Todos os produtos foram enviados com sucesso!");
     }
-  };
+  
+    setIsLoading(false);
+  };  
 
   const resetUploadProcess = () => {
     setFileData(null);
@@ -143,7 +147,7 @@ const UploadExcel: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4"  style={{ marginTop: "20px", justifyContent: "center", display: "flex" }}>
         <input
           type="file"
           accept=".xlsx, .xls"
@@ -152,12 +156,22 @@ const UploadExcel: React.FC = () => {
         />
       </div>
 
+      {isLoading && (
+        <div className="flex justify-center items-center">
+          <div className="spinner border-t-4 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+          <p className="ml-4 text-blue-500 font-medium">Importando produtos, aguarde...</p>
+        </div>
+      )}
+
       {fileData && !finalMessage && (
         <button
           onClick={handleSendData}
-          className="bg-blue-500 text-white py-2 px-4 mt-4 rounded"
+          className={`bg-blue-500 text-white py-2 px-4 mt-4 rounded ${
+            isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
+          }`}
+          disabled={isLoading}
         >
-          Enviar Produtos
+          {isLoading ? "Importando..." : "Enviar Planilha"}
         </button>
       )}
 
