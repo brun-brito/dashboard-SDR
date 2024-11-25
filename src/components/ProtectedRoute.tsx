@@ -7,14 +7,18 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { currentUser } = useAuth(); // Obtenha o usuário autenticado do contexto ou do hook
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
 
   if (!currentUser) {
-    // Se não estiver autenticado, redirecione para a página de login
+    // Redirecione para login se o usuário não estiver autenticado
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>; // Renderiza os filhos se autenticado
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

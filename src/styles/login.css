@@ -1,0 +1,80 @@
+/* Layout principal */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f8fafc; /* Fundo levemente azul */
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Formulário de login */
+  .login-form {
+    background-color: #ffffff; /* Fundo branco */
+    padding: 32px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra sutil */
+    width: 100%;
+    max-width: 360px; /* Largura máxima */
+    text-align: center;
+    box-sizing: border-box;
+  }
+  
+  /* Título do formulário */
+  .login-form h1 {
+    font-size: 1.8rem; /* Tamanho do título */
+    margin-bottom: 24px;
+    color: #111827; /* Cinza escuro */
+    font-weight: 600; /* Peso do texto */
+  }
+  
+  /* Campos de entrada */
+  .login-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #d1d5db; /* Borda cinza clara */
+    border-radius: 4px; /* Bordas arredondadas */
+    font-size: 1rem;
+    box-sizing: border-box;
+    background-color: #f9fafb; /* Fundo claro */
+  }
+  
+  .login-form input:focus {
+    outline: none;
+    border-color: #6366f1; /* Azul personalizado */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); /* Destaque no foco */
+  }
+  
+  /* Botão de login */
+  .login-form button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background-color: #6366f1; /* Azul personalizado */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .login-form button:hover {
+    background-color: #4f46e5; /* Azul mais escuro no hover */
+  }
+  
+  /* Mensagem de erro */
+  .error-message {
+    color: #dc2626; /* Vermelho */
+    font-size: 0.875rem;
+    margin-top: 8px;
+    text-align: center;
+  }
+  
+  /* Margem entre os elementos */
+  .form-item {
+    margin-bottom: 16px;
+  }
+  

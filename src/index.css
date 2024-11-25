@@ -7,7 +7,7 @@
   --primary-hover: #4338ca;
   --danger-color: #dc2626;
   --danger-hover: #b91c1c;
-  --background-color: #000;
+  --background-color: #f5fdfd;
   --card-background: #ffffff;
   --border-color: #d1d5db;
   --text-dark: #1f2937;
@@ -49,12 +49,12 @@ h3 {
   font-size: 1.5rem;
 }
 
-form {
+/* form {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
-}
+} */
 
 input, select {
   padding: 0.5rem;
