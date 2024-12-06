@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebase/config";
 import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from "firebase/firestore";
 import { TrashIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/16/solid";
+import isValidDate from "../components/date";
 
 interface Product {
   id: string;
@@ -10,6 +11,8 @@ interface Product {
   quantidade: number;
   marca: string;
   categoria: string;
+  volume?: string;
+  vencimento?: string;
 }
 
 const ProductTable: React.FC = () => {
@@ -20,6 +23,8 @@ const ProductTable: React.FC = () => {
     quantidade: "",
     marca: "",
     categoria: "",
+    volume: "",
+    vencimento: "",
   });
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -160,6 +165,10 @@ const ProductTable: React.FC = () => {
   };
 
   const updateProduct = async (id: string, updatedData: any) => {
+    if (updatedData.vencimento && !isValidDate(updatedData.vencimento)) {
+      alert("O vencimento do produto é inválido ou o produto já venceu.");
+      return;
+    }
     await updateDoc(doc(db, "produtos", id), updatedData);
     setEditingProduct(null);
     fetchProducts();
@@ -171,17 +180,24 @@ const ProductTable: React.FC = () => {
       return;
     }
 
+    if (!isValidDate(newProduct.vencimento)) {
+      alert("O vencimento do produto é inválido ou o produto já venceu.");
+      return;
+    }
+
     try {
       await addDoc(collection(db, "produtos"), {
         nome: newProduct.nome,
         preco: parseFloat(newProduct.preco),
         quantidade: parseInt(newProduct.quantidade),
         marca: newProduct.marca,
-        categoria: newProduct.categoria || "Sem categoria",
-      });
+        categoria: newProduct.categoria || "-",
+        volume: newProduct.volume || "-",
+        vencimento: newProduct.vencimento || "-",
+      });      
 
       alert("Produto adicionado com sucesso!");
-      setNewProduct({ nome: "", preco: "", quantidade: "", marca: "", categoria: "" });
+      setNewProduct({ nome: "", preco: "", quantidade: "", marca: "", categoria: "", volume: "", vencimento: "" });
       fetchProducts();
     } catch (error) {
       console.error("Erro ao adicionar produto:", error);
@@ -258,6 +274,33 @@ const ProductTable: React.FC = () => {
                 onChange={(e) => setNewProduct({ ...newProduct, categoria: e.target.value })}
                 className="border border-gray-300 rounded p-2 w-full"
               />
+              <input
+                type="text"
+                placeholder="Volume"
+                value={newProduct.volume}
+                onChange={(e) => setNewProduct({ ...newProduct, volume: e.target.value })}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <input
+                type="text"
+                placeholder="Vencimento (MM/AA)"
+                value={newProduct.vencimento}
+                onChange={(e) => {
+                  const input = e.target.value;
+
+                  // Permitir apenas números e "/"
+                  if (/^\d{0,2}\/?\d{0,2}$/.test(input)) {
+                    setNewProduct({ ...newProduct, vencimento: input });
+                  }
+                }}
+                maxLength={5}
+                className={`border rounded p-2 w-full ${
+                  newProduct.vencimento && !isValidDate(newProduct.vencimento) ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+              {newProduct.vencimento && !isValidDate(newProduct.vencimento) && (
+                <p style={{ color: "red" }}>Insira uma vencimento no formato MM/AA e futura.</p>
+              )}
               <div className="button-edit-group flex gap-2">
                 <button
                   onClick={addProduct}
@@ -274,6 +317,8 @@ const ProductTable: React.FC = () => {
                       quantidade: "",
                       marca: "",
                       categoria: "",
+                      volume: "",
+                      vencimento: "",
                     });
                   }}
                   className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
@@ -380,6 +425,28 @@ const ProductTable: React.FC = () => {
                   "▲▼"
                 )}
               </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("volume")}
+              >
+                Volume{" "}
+                {sortConfig?.key === "volume" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
+              <th
+                className="px-4 py-2 border border-gray-300 cursor-pointer"
+                onClick={() => sortProducts("vencimento")}
+              >
+                Vencimento{" "}
+                {sortConfig?.key === "vencimento" ? (
+                  sortConfig.direction === "asc" ? "▲" : "▼"
+                ) : (
+                  "▲▼"
+                )}
+              </th>
               <th className="px-4 py-2 border border-gray-300">Ações</th>
             </tr>
           </thead>
@@ -454,6 +521,42 @@ const ProductTable: React.FC = () => {
                       />
                     </td>
                     <td className="px-4 py-2 border border-gray-300">
+                      <input
+                        defaultValue={product.volume}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            volume: e.target.value,
+                          })
+                        }
+                        className="border border-gray-300 rounded p-1 w-full"
+                      />
+                    </td>
+                    <td className="px-4 py-2 border border-gray-300">
+                      <input
+                        type="text"
+                        value={editingProduct?.vencimento || ""}
+                        onChange={(e) => {
+                          const input = e.target.value;
+
+                          // Permite apenas o formato MM/AA com números e barra
+                          if (/^\d{0,2}\/?\d{0,2}$/.test(input)) {
+                            setEditingProduct({
+                              ...editingProduct,
+                              vencimento: input.slice(0, 5), // Limita a 5 caracteres
+                            });
+                          }
+                        }}
+                        className={`border border-gray-300 rounded p-1 w-full ${
+                          editingProduct?.vencimento && !isValidDate(editingProduct.vencimento) ? "border-red-500" : "border-gray-300"
+                        }`}
+                        maxLength={5} // Limita o campo para no máximo 5 caracteres
+                      />
+                      {editingProduct?.vencimento && !isValidDate(editingProduct.vencimento) && (
+                        <p style={{ color: "red" }}>Vencimento inválido ou passado.</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 border border-gray-300">
                       <div className="button-group">
                         <button
                           onClick={() =>
@@ -479,6 +582,8 @@ const ProductTable: React.FC = () => {
                     <td className="px-4 py-2 border border-gray-300">{product.quantidade}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.marca}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.categoria}</td>
+                    <td className="px-4 py-2 border border-gray-300">{product.volume}</td>
+                    <td className="px-4 py-2 border border-gray-300">{product.vencimento}</td>
                     <td className="px-4 py-2 border border-gray-300">
                     <div className="button-group">
                       <button

@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import UploadExcel from "../components/UploadExcel";
 
 const copyTable = () => {
-  const tableContent = `Nome\tPreço\tQuantidade\tCategoria\tMarca
-  Botox 50 UI\t445.0\t100\tToxina botulínica\tAllergan
-  Botox 100 UI\t745.0\t100\tToxina botulínica\tAllergan
-  Botox 200 UI\t1345.0\t100\tToxina botulínica\tAllergan
-  Botulift 100 UI\t650.0\t100\tToxina botulínica\tBotulift
-  Botulift 150 UI\t870.0\t100\tToxina botulínica\tBotulift`;
+  const tableContent = `Nome\tPreço\tQuantidade\tCategoria\tMarca\tVolume\tVencimento
+Botox 50 UI\t445.0\t25\tToxina botulínica\tAllergan\t50 UI\t08/25
+Botox 100 UI\t745.99\t100\tToxina botulínica\tAllergan\t100 UI\t10/25
+Botox 200 UI\t1345.55\t10\tToxina botulínica\tAllergan\t200 UI\t12/25
+Botulift 100 UI\t650.0\t150\tToxina botulínica\tBotulift\t100 UI\t09/25
+Botulift 150 UI\t869.99\t9\tToxina botulínica\tBotulift\t150 UI\t11/25`;
 
   navigator.clipboard
     .writeText(tableContent)
@@ -69,7 +69,7 @@ const ImportPage: React.FC = () => {
             {/* Instruções */}
             <h3 className="text-lg font-medium mb-2">Instruções:</h3>
             <p className="text-gray-700 mb-4">
-              Para importar produtos, sua planilha deve conter as seguintes colunas obrigatórias:
+              Para importar produtos, sua planilha deve conter as seguintes colunas:
             </p>
             <ul className="list-disc list-inside mb-4 text-gray-700">
               <li><strong>Nome</strong>: Nome do produto.</li>
@@ -77,6 +77,8 @@ const ImportPage: React.FC = () => {
               <li><strong>Quantidade</strong>: Quantidade disponível.</li>
               <li><strong>Categoria</strong>: Categoria do produto (opcional).</li>
               <li><strong>Marca</strong>: Marca do produto.</li>
+              <li><strong>Volume</strong>: Volume do produto (opcional).</li>
+              <li><strong>Vencimento</strong>: Data de vencimento no formato <code>MM/AA</code>. Produtos vencidos ou com datas inválidas serão recusados.<br></br> Obs: Ao montar a tabela, deve colocar o vencimento como texto comum, para evitar que formatação automática</li>
             </ul>
 
             {/* Exemplo de tabela */}
@@ -90,6 +92,8 @@ const ImportPage: React.FC = () => {
                     <th className="border border-gray-300 px-4 py-2">Quantidade</th>
                     <th className="border border-gray-300 px-4 py-2">Categoria</th>
                     <th className="border border-gray-300 px-4 py-2">Marca</th>
+                    <th className="border border-gray-300 px-4 py-2">Volume</th>
+                    <th className="border border-gray-300 px-4 py-2">Vencimento</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -99,6 +103,8 @@ const ImportPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2">25</td>
                     <td className="border border-gray-300 px-4 py-2">Toxina botulínica</td>
                     <td className="border border-gray-300 px-4 py-2">Allergan</td>
+                    <td className="border border-gray-300 px-4 py-2">50 UI</td>
+                    <td className="border border-gray-300 px-4 py-2">08/25</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">Botox 100 UI</td>
@@ -106,6 +112,8 @@ const ImportPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2">100</td>
                     <td className="border border-gray-300 px-4 py-2">Toxina botulínica</td>
                     <td className="border border-gray-300 px-4 py-2">Allergan</td>
+                    <td className="border border-gray-300 px-4 py-2">100 UI</td>
+                    <td className="border border-gray-300 px-4 py-2">10/25</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">Botox 200 UI</td>
@@ -113,6 +121,8 @@ const ImportPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2">10</td>
                     <td className="border border-gray-300 px-4 py-2">Toxina botulínica</td>
                     <td className="border border-gray-300 px-4 py-2">Allergan</td>
+                    <td className="border border-gray-300 px-4 py-2">200 UI</td>
+                    <td className="border border-gray-300 px-4 py-2">12/25</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">Botulift 100 UI</td>
@@ -120,6 +130,8 @@ const ImportPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2">150</td>
                     <td className="border border-gray-300 px-4 py-2">Toxina botulínica</td>
                     <td className="border border-gray-300 px-4 py-2">Botulift</td>
+                    <td className="border border-gray-300 px-4 py-2">100 UI</td>
+                    <td className="border border-gray-300 px-4 py-2">09/25</td>
                   </tr>
                   <tr>
                     <td className="border border-gray-300 px-4 py-2">Botulift 150 UI</td>
@@ -127,6 +139,8 @@ const ImportPage: React.FC = () => {
                     <td className="border border-gray-300 px-4 py-2">9</td>
                     <td className="border border-gray-300 px-4 py-2">Toxina botulínica</td>
                     <td className="border border-gray-300 px-4 py-2">Botulift</td>
+                    <td className="border border-gray-300 px-4 py-2">150 UI</td>
+                    <td className="border border-gray-300 px-4 py-2">11/25</td>
                   </tr>
                 </tbody>
               </table>

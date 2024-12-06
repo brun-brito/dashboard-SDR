@@ -49,13 +49,6 @@ h3 {
   font-size: 1.5rem;
 }
 
-/* form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-} */
-
 input, select {
   padding: 0.5rem;
   border: 1px solid var(--border-color);
@@ -63,6 +56,11 @@ input, select {
   background-color: #f9fafb;
   font-size: 1rem;
   transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input {
+  width: 90%;
+  box-sizing: border-box;
 }
 
 input:focus, select:focus {
@@ -206,6 +204,10 @@ th:last-child, td:last-child {
 }
 
 @media (max-width: 768px) {
+  input{
+    width: auto;
+  }
+
   .container {
     width: 95%;
   }
@@ -407,4 +409,8 @@ th:last-child, td:last-child {
   gap: 0.3rem;
   margin-top: 10px;
   display: flex;
+}
+
+.botao-enviar-planilha {
+  margin: 10px 0 0 65px;
 }

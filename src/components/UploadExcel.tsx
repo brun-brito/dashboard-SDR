@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase/config";
 import { collection, addDoc } from "firebase/firestore";
+import isValidDate from "../components/date";
 
 interface Product {
   nome: string;
@@ -10,6 +11,8 @@ interface Product {
   quantidade: number;
   categoria?: string;
   marca?: string;
+  volume?: string;
+  vencimento?: string;
 }
 
 const UploadExcel: React.FC = () => {
@@ -49,7 +52,8 @@ const UploadExcel: React.FC = () => {
                 row["Nome"] &&
                 row["Preço"] !== undefined &&
                 row["Quantidade"] !== undefined &&
-                row["Marca"]
+                row["Marca"] &&
+                (!row["Vencimento"] || isValidDate(row["Vencimento"]))
             )
             .map((row) => ({
               nome: row["Nome"],
@@ -57,7 +61,25 @@ const UploadExcel: React.FC = () => {
               quantidade: row["Quantidade"],
               categoria: row["Categoria"] || "Sem categoria",
               marca: row["Marca"],
+              volume: row["Volume"] || "Não informado",
+              vencimento: row["Vencimento"] || "Não informada",
             }));
+
+          // Registra os produtos inválidos
+          const invalidProducts = jsonData.filter(
+            (row) =>
+              row["Vencimento"] && !isValidDate(row["Vencimento"])
+          );
+
+          if (invalidProducts.length > 0) {
+            setUploadLogs((prev) => [
+              ...prev,
+              `Produtos recusados devido ao vencimento inválido ou expirado:`,
+              ...invalidProducts.map(
+                (row, index) =>
+                  `Linha ${index + 2}: Nome: ${row["Nome"]}, Vencimento inválido: ${row["Vencimento"]}`),
+            ]);
+          }
   
           setFileData(validData);
           setUploadLogs((prev) => [
@@ -75,7 +97,7 @@ const UploadExcel: React.FC = () => {
     };
   
     reader.readAsBinaryString(file);
-  };  
+  };    
 
   const handleSendData = async () => {
     if (!fileData) {
@@ -98,13 +120,24 @@ const UploadExcel: React.FC = () => {
           continue;
         }
 
+        if (product.vencimento && !isValidDate(product.vencimento)) {
+          setUploadLogs((prev) => [
+            ...prev,
+            `Produto na linha ${index + 2} recusado: Vencimento inválido ou expirado (${product.vencimento}).`,
+          ]);
+          errorCount++;
+          continue;
+        }       
+
         await addDoc(collection(db, "produtos"), {
           nome: product.nome,
           preco: product.preco,
           quantidade: product.quantidade,
           categoria: product.categoria || "Geral",
           marca: product.marca,
-        });
+          volume: product.volume || "Não informado",
+          vencimento: product.vencimento || "Não informada",
+        });        
 
         successCount++;
         setUploadLogs((prev) => [
@@ -166,7 +199,7 @@ const UploadExcel: React.FC = () => {
       {fileData && !finalMessage && (
         <button
           onClick={handleSendData}
-          className={`bg-blue-500 text-white py-2 px-4 mt-4 rounded ${
+          className={`botao-enviar-planilha bg-blue-500 text-white py-2 px-4 mt-4 rounded ${
             isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
           }`}
           disabled={isLoading}
