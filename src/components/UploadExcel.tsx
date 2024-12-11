@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase/config";
-import { collection, addDoc } from "firebase/firestore";
-import isValidDate from "../components/date";
+import { Timestamp, collection, addDoc } from "firebase/firestore";
+import { isValidDate, formatDateToDDMMYYYY, parseToDate } from "./Date";
 
 interface Product {
   nome: string;
@@ -77,7 +77,7 @@ const UploadExcel: React.FC = () => {
               `Produtos recusados devido ao vencimento inválido ou expirado:`,
               ...invalidProducts.map(
                 (row, index) =>
-                  `Linha ${index + 2}: Nome: ${row["Nome"]}, Vencimento inválido: ${row["Vencimento"]}`),
+                  `Linha ${index + 2}: Nome: ${row["Nome"]}, Vencimento inválido: ${formatDateToDDMMYYYY(row["Vencimento"])}`),
             ]);
           }
   
@@ -136,8 +136,11 @@ const UploadExcel: React.FC = () => {
           categoria: product.categoria || "Geral",
           marca: product.marca,
           volume: product.volume || "Não informado",
-          vencimento: product.vencimento || "Não informada",
-        });        
+          vencimento: (() => {
+            const date = parseToDate(product.vencimento);
+            return date ? Timestamp.fromDate(date) : null; // Converte para Timestamp ou null
+          })(),
+        });
 
         successCount++;
         setUploadLogs((prev) => [
@@ -239,3 +242,5 @@ const UploadExcel: React.FC = () => {
 };
 
 export default UploadExcel;
+
+

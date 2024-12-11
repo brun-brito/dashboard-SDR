@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase/config";
-import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc, updateDoc, addDoc, Timestamp } from "firebase/firestore";
 import { TrashIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/16/solid";
-import isValidDate from "../components/date";
+import { isValidDate, formatTimestamp, parseToDate } from "./Date";
 
 interface Product {
   id: string;
@@ -169,10 +169,21 @@ const ProductTable: React.FC = () => {
       alert("O vencimento do produto é inválido ou o produto já venceu.");
       return;
     }
-    await updateDoc(doc(db, "produtos", id), updatedData);
+  
+    // Converte o vencimento para Timestamp
+    const updatedVencimento = updatedData.vencimento
+      ? Timestamp.fromDate(parseToDate(updatedData.vencimento)!)
+      : null;
+  
+    // Atualiza o documento no Firestore
+    await updateDoc(doc(db, "produtos", id), {
+      ...updatedData,
+      vencimento: updatedVencimento, // Salva o vencimento como Timestamp
+    });
+  
     setEditingProduct(null);
     fetchProducts();
-  };
+  };  
 
   const addProduct = async () => {
     if (!newProduct.nome || !newProduct.preco || !newProduct.quantidade || !newProduct.marca) {
@@ -193,8 +204,10 @@ const ProductTable: React.FC = () => {
         marca: newProduct.marca,
         categoria: newProduct.categoria || "-",
         volume: newProduct.volume || "-",
-        vencimento: newProduct.vencimento || "-",
-      });      
+        vencimento: newProduct.vencimento
+          ? Timestamp.fromDate(parseToDate(newProduct.vencimento)!)
+          : null, // Converte para Timestamp ou salva como null
+      }); 
 
       alert("Produto adicionado com sucesso!");
       setNewProduct({ nome: "", preco: "", quantidade: "", marca: "", categoria: "", volume: "", vencimento: "" });
@@ -283,23 +296,33 @@ const ProductTable: React.FC = () => {
               />
               <input
                 type="text"
-                placeholder="Vencimento (MM/AA)"
+                placeholder="Vencimento (DD/MM/AAAA)"
                 value={newProduct.vencimento}
                 onChange={(e) => {
-                  const input = e.target.value;
+                  const input = e.target.value.replace(/\D/g, ""); // Remove qualquer caractere não numérico
 
-                  // Permitir apenas números e "/"
-                  if (/^\d{0,2}\/?\d{0,2}$/.test(input)) {
-                    setNewProduct({ ...newProduct, vencimento: input });
+                  // Aplica a máscara no formato DD/MM/AAAA
+                  let formattedInput = input;
+                  if (formattedInput.length > 2) {
+                    formattedInput = formattedInput.slice(0, 2) + "/" + formattedInput.slice(2);
                   }
+                  if (formattedInput.length > 5) {
+                    formattedInput = formattedInput.slice(0, 5) + "/" + formattedInput.slice(5, 10);
+                  }
+
+                  setNewProduct({ ...newProduct, vencimento: formattedInput });
                 }}
-                maxLength={5}
+                maxLength={10}
                 className={`border rounded p-2 w-full ${
-                  newProduct.vencimento && !isValidDate(newProduct.vencimento) ? "border-red-500" : "border-gray-300"
+                  newProduct.vencimento && !isValidDate(newProduct.vencimento)
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
               />
               {newProduct.vencimento && !isValidDate(newProduct.vencimento) && (
-                <p style={{ color: "red" }}>Insira uma vencimento no formato MM/AA e futura.</p>
+                <p style={{ color: "red" }}>
+                  Insira um vencimento no formato DD/MM/AAAA e em uma data futura.
+                </p>
               )}
               <div className="button-edit-group flex gap-2">
                 <button
@@ -537,20 +560,26 @@ const ProductTable: React.FC = () => {
                         type="text"
                         value={editingProduct?.vencimento || ""}
                         onChange={(e) => {
-                          const input = e.target.value;
+                          const input = e.target.value.replace(/\D/g, ""); // Remove caracteres não numéricos
 
-                          // Permite apenas o formato MM/AA com números e barra
-                          if (/^\d{0,2}\/?\d{0,2}$/.test(input)) {
-                            setEditingProduct({
-                              ...editingProduct,
-                              vencimento: input.slice(0, 5), // Limita a 5 caracteres
-                            });
+                          // Aplica a máscara no formato DD/MM/AAAA
+                          let formattedInput = input;
+                          if (formattedInput.length > 2) {
+                            formattedInput = formattedInput.slice(0, 2) + "/" + formattedInput.slice(2);
                           }
+                          if (formattedInput.length > 5) {
+                            formattedInput = formattedInput.slice(0, 5) + "/" + formattedInput.slice(5, 10);
+                          }
+
+                          setEditingProduct({
+                            ...editingProduct,
+                            vencimento: formattedInput, // Atualiza o valor formatado no estado
+                          });
                         }}
                         className={`border border-gray-300 rounded p-1 w-full ${
                           editingProduct?.vencimento && !isValidDate(editingProduct.vencimento) ? "border-red-500" : "border-gray-300"
                         }`}
-                        maxLength={5} // Limita o campo para no máximo 5 caracteres
+                        maxLength={10} // Limita o campo a 10 caracteres
                       />
                       {editingProduct?.vencimento && !isValidDate(editingProduct.vencimento) && (
                         <p style={{ color: "red" }}>Vencimento inválido ou passado.</p>
@@ -578,20 +607,27 @@ const ProductTable: React.FC = () => {
                 ) : (
                   <>
                     <td className="px-4 py-2 border border-gray-300">{product.nome}</td>
-                    <td className="px-4 py-2 border border-gray-300">{product.preco}</td>
+                    <td className="px-4 py-2 border border-gray-300">R${product.preco}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.quantidade}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.marca}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.categoria}</td>
                     <td className="px-4 py-2 border border-gray-300">{product.volume}</td>
-                    <td className="px-4 py-2 border border-gray-300">{product.vencimento}</td>
+                    <td className="px-4 py-2 border border-gray-300">{formatTimestamp(product.vencimento || null)}</td>
                     <td className="px-4 py-2 border border-gray-300">
                     <div className="button-group">
-                      <button
-                        onClick={() => setEditingProduct(product)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                      >
-                        Editar
-                      </button>
+                    <button
+                      onClick={() =>
+                        setEditingProduct({
+                          ...product,
+                          vencimento: product.vencimento
+                            ? formatTimestamp(product.vencimento) // Formata para DD/MM/AAAA
+                            : "", // Caso o vencimento seja nulo ou indefinido
+                        })
+                      }
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    >
+                      Editar
+                    </button>
                       <button
                         onClick={() => deleteProduct(product.id)}
                         className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
